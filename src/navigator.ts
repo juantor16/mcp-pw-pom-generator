@@ -41,7 +41,7 @@ export async function crawlAndGeneratePOMs(startUrl: string) {
     for (const href of hrefs) {
         const fullUrl = href.startsWith('http') ? href : `${baseUrl}${href}`;
         try {
-            console.log(`🌐 Visitando: ${fullUrl}`);
+            console.log(`🌐 Visiting: ${fullUrl}`);
             await page.goto(fullUrl);
             const result = await analyzePage(fullUrl);
             const pageName = slugify(href === '/' ? 'home' : href);

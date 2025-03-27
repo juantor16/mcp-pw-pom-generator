@@ -14,6 +14,7 @@ export async function analyzePage(url: string, highlight: boolean = false) {
             if (el.tagName.toLowerCase() === 'button' || el.getAttribute('role') === 'button') {
                 const name = el.textContent?.trim();
                 if (name) return `getByRole('button', { name: '${name}' })`;
+                return '';
             }
             if (el.id) {
                 const label = document.querySelector(`label[for="${el.id}"]`);
@@ -26,15 +27,19 @@ export async function analyzePage(url: string, highlight: boolean = false) {
             if (el.tagName.toLowerCase() === 'input' && el.textContent?.trim()) {
                 return `input:has-text("${el.textContent.trim()}")`;
             }
-            if (el.textContent && el.textContent.trim()) return `getByText('${el.textContent.trim()}')`;
-            return el.tagName.toLowerCase();
+            if (el.textContent && el.textContent.trim()) {
+                const safeText = el.textContent.trim().replace(/'/g, "\\'");
+                return `getByText('${safeText}')`;
+            }
+
+            return ''; // <-- important to avoid undefined
         }
 
         const seen = new Set();
         document.querySelectorAll('button, a, input, textarea, select').forEach((el) => {
             const element = el as HTMLElement;
             const selector = getBestSelector(element);
-            if (seen.has(selector)) return;
+            if (!selector || seen.has(selector)) return;
             seen.add(selector);
 
             const text = element.textContent?.trim() || '';
@@ -69,7 +74,7 @@ export async function analyzePage(url: string, highlight: boolean = false) {
                 } catch { }
             });
         }, elements);
-        await page.waitForTimeout(60000); // 1 minute to look
+        await page.waitForTimeout(60000);
     }
 
     await browser.close();

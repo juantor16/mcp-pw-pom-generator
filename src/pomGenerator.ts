@@ -52,10 +52,12 @@ export function generatePOM(elements: ElementData[], outputFile: string) {
         usedNames.add(name);
 
         lines.push(`  readonly ${name}: Locator;`);
+        const safeSelector = el.selector.replace(/'/g, "\\'");
+
         if (/^getBy(Text|Role|Label)\(/.test(el.selector)) {
-            constructorLines.push(`    this.${name} = page.${el.selector}`);
+          constructorLines.push(`    this.${name} = page.${el.selector}`);
         } else {
-            constructorLines.push(`    this.${name} = page.locator('${el.selector}');`);
+          constructorLines.push(`    this.${name} = page.locator('${safeSelector}');`);
         }
     });
 
