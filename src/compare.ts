@@ -59,7 +59,13 @@ async function main() {
             });
             if (!isAlreadyInPom) {
                 try {
-                    const locator = page.locator(el.selector);
+                    let locator;
+                    if (el.selector.startsWith('getByText')) {
+                        const text = el.selector.match(/getByText\('(.+)'\)/)?.[1]?.trim();
+                        locator = page.getByText(text ?? '');
+                    } else {
+                        locator = page.locator(el.selector);
+                    }
                     const count = await safeCount(locator);
                     if (count > 0) {
                         await highlightElement(page, locator, el.selector, 'blue');
