@@ -1,27 +1,29 @@
-🧠 MCP POM Generator
 
-Welcome to MCP POM Generator, an experimental and powerful tool to scan websites, auto-generate optimized Page Object Model (POM) files for Playwright, and visually highlight which elements are correctly mapped, missing, or broken. 🔍💥
+# 🧠 MCP POM Generator
+
+Welcome to **MCP POM Generator**, an experimental and powerful tool to scan websites, auto-generate optimized **Page Object Model (POM)** files for **Playwright**, and visually highlight which elements are correctly mapped, missing, or broken. 🔍💥
 
 > ⚡️ Built to accelerate E2E automation like never before.
 
 ---
 
-🚀 Features
+## 🚀 Features
 
-- 🔎 Scans multiple pages from a site automatically.
-- 🧬 Generates POM classes in TypeScript ready for Playwright.
-- ✅ Prioritizes `data-testid`, `id`, `aria-label`, `placeholder`, and other accessible attributes.
-- 🟩 Interactive visual overlay with:
-  - 🟩 Green: found elements
-  - 🟥 Red: broken locators (locators not found will be displayed on logs for now)
-  - 🟦 Blue: elements found but not yet mapped
-- 📂 Saves POM classes in `src/output`.
+- 🔎 Scans public and **private (post-authentication)** pages from a site automatically.
+- 🔐 **Supports sites with complex authentication** via integration with Playwright Global Setup.
+- 🧬 Generates POM classes in TypeScript, ready for Playwright.
+- ✅ Prioritizes `data-testid`, roles (`getByRole`), labels (`getByLabel`), placeholders (`getByPlaceholder`), and other accessible attributes.
+- 🟩 Interactive visual overlay (`compare.ts`) with:
+  - 🟩 **Green**: found elements defined in the POM.
+  - 🟥 **Red**: POM locators not found on the page (logged in console).
+  - 🟦 **Blue**: interactive elements found on the page but not mapped in the POM.
+- 📂 Outputs saved in `src/output/`.
 - 💻 Visual validation in the browser.
-- 📋 Clean CLI reporting for quick debugging.
+- 📋 Clean CLI reporting for debugging.
 
 ---
 
-🛠 Installation
+## 🛠 Installation
 
 ```bash
 git clone https://github.com/juantor16/mcp-pom-generator.git
@@ -31,76 +33,137 @@ npm install
 
 ---
 
-⚙️ Usage
+## ⚙️ Usage
 
-### 1. Generate POM for a single page:
+### 1. Generate POM for a Single Page (no login required)
 
 ```bash
-npx ts-node src/analyzer.ts --url=https://your-site.com
+# Analyze a public page and generate POM in src/output/
+npx ts-node src/cli.ts -u https://your-site.com/public-page
+
+# Optional: specify output file and highlight mapped elements
+npx ts-node src/cli.ts -u https://your-site.com -o myPage.ts --highlight
 ```
 
-### 2. Crawl multiple site routes and generate all POMs:
+---
+
+### 2. Multiple Page Crawl (Public or Authenticated Sites)
+
+#### a. (If login is required) Configure Playwright Global Setup
+
+Create `playwright.config.ts`:
+
+```ts
+import { defineConfig } from '@playwright/test';
+
+const STORAGE_STATE = 'storageState.json';
+
+export default defineConfig({
+  globalSetup: require.resolve('./src/global.setup.ts'),
+  projects: [
+    {
+      name: 'mcp-crawler-setup',
+      testMatch: /global\.setup\.ts/,
+    },
+    {
+      name: 'mcp-crawler-main',
+      use: {
+        storageState: STORAGE_STATE,
+      },
+    },
+  ],
+});
+```
+
+Create `src/global.setup.ts` with your login logic using Playwright. Make sure to save the session using:
+
+```ts
+await page.context().storageState({ path: 'storageState.json' });
+```
+
+> **Tip**: Use `process.env` for secure credentials.
+
+Add `storageState.json` to your `.gitignore`.
+
+Run the setup script:
+
+```bash
+npx playwright test --project=mcp-crawler-setup
+```
+
+#### b. Start the MCP Server
 
 ```bash
 npx ts-node src/mcpServer.ts
 ```
 
-Send a `POST` request to `http://localhost:3001/crawl` with:
+Server will listen at `http://localhost:3001`.
+
+#### c. Send the Crawl Request
 
 ```json
+POST http://localhost:3001/crawl
 {
   "url": "https://your-site.com"
 }
 ```
 
-### 3. Compare a POM with the real page:
+This will generate POMs for all navigated pages in `src/output/`.
+
+---
+
+### 3. Compare a POM with the Live Page
 
 ```bash
-npx ts-node src/compare.ts --url=https://your-site.com/login --pom=src/output/login.ts
+npx ts-node src/compare.ts --url=https://your-site.com/dashboard --pom=src/output/dashboard.ts
 ```
 
-### Visual output in browser:
-- Green: locator found
-- Red: broken locator in POM
-- Blue: elements found but not mapped
+- 🟩 Green: POM locator found.
+- 🟥 Red: POM locator NOT found (logged in console).
+- 🟦 Blue: interactive element on the page but missing in the POM.
 
 ---
 
-✨ Visual Example
+## ✨ Visual Example
 
-![Visual Example](./assets/pom-visual-example.png?raw=true "Visual Example")
+> _(Optional image here showing the comparison on an authenticated page)_  
+> _Add it like this:_  
+> `![Comparison Example](./docs/example-compare.png)`
+
 ---
 
-🧪 Roadmap
+## 🧪 Roadmap
 
 - [x] Auto-generate POMs per page
-- [x] Visual validation of locators
-- [ ] DevTools-like visual mode
+- [x] Visual validation of locators (`compare.ts`)
+- [x] Authentication handling via Global Setup
+- [ ] DevTools-like visual mode for interactive exploration
 - [ ] CLI to compare POM versions
-- [ ] Auto-push POMs to remote
-- [ ] Web UI to manage POMs
+- [ ] Auto-push updated POMs to a remote repo
+- [ ] Web UI to manage and visualize POMs
 
 ---
 
-🧠 Why MCP?
+## 🧠 Why MCP?
 
-> "Because a POM is useless if you don’t know if it works."
-
----
-
-👨‍💻 Author
-
-Juan Torres  
-🔗 https://linkedin.com/in/juantor16 — QA Engineer | Automation Lover | 🇦🇷
+> _"Because a POM is useless if you don’t know if it works."_
 
 ---
 
-⚠️ License
+## 👨‍💻 Author
 
-MIT – Use it, improve it, and share it 🚀
+**Juan Torres**  
+🔗 [linkedin.com/in/juantor16](https://linkedin.com/in/juantor16)  
+QA Engineer | Automation Lover | 🇦🇷
 
 ---
 
-⭐ Was it useful?
+## ⚠️ License
 
-Star the repo! 🌟
+**MIT** – Use it, improve it, and share it 🚀
+
+---
+
+## ⭐ Was it useful?
+
+Please consider starring the repo! 🌟
