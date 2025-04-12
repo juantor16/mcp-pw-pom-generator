@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 type ElementData = {
     tag: string;
@@ -168,10 +168,23 @@ export function generatePOM(elements: ElementData[], outputFile: string, pageNam
     // Write the content to the file
     const content = lines.join('\n');
     const fullPath = path.resolve(outputFile);
+    const dirName = path.dirname(fullPath); // Get the directory path (e.g., 'src/output')
+
     try {
+        // Ensure the output directory exists before writing the file
+        if (!fs.existsSync(dirName)) {
+            // Create the directory recursively if it doesn't exist
+            fs.mkdirSync(dirName, { recursive: true });
+            // Optional: Add a log message for directory creation
+            console.log(`\t📂 Created directory: ${dirName}`);
+        }
+
+        // Write the POM file content
         fs.writeFileSync(fullPath, content, 'utf-8');
         console.log(`\t📄 POM generated: ${path.basename(fullPath)} (Class: ${className})`);
+
     } catch (writeError) {
-         console.error(`\t❌ Error writing the POM file ${fullPath}:`, writeError);
+        // Log any error during directory creation or file writing
+        console.error(`\t❌ Error writing the POM file ${fullPath}:`, writeError);
     }
 }

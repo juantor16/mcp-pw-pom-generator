@@ -3,10 +3,13 @@
     "target": "ES2020",
     "module": "commonjs",
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "esModuleInterop": true,
     "strict": true,
-    "moduleResolution": "node"
-    // "types": ["node"] <--- LÍNEA ELIMINADA
-  }
+    "moduleResolution": "node",
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "playwright.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }
