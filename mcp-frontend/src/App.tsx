@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
+import './App.css'
+import PomVisualizer from './components/PomVisualizer'
 
 interface AnalysisResult {
   success: boolean;
@@ -14,6 +16,12 @@ interface CrawlResult {
   pagesAnalyzed: string[];
 }
 
+interface POMFile {
+  name: string;
+  path: string;
+  content: string;
+}
+
 function App() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState('Ready')
@@ -21,6 +29,8 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [crawlResults, setCrawlResults] = useState<CrawlResult | null>(null)
   const [isCrawling, setIsCrawling] = useState(false)
+  const [pomFiles, setPomFiles] = useState<POMFile[]>([])
+  const [selectedFile, setSelectedFile] = useState<POMFile | null>(null)
 
   const handleAnalyzeSinglePage = async () => {
     // Reset previous results and errors
@@ -66,6 +76,38 @@ function App() {
       console.error('Crawl error:', err)
     } finally {
       setIsCrawling(false)
+    }
+  }
+
+  useEffect(() => {
+    const fetchPOMFiles = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/pom-files')
+        if (!response.ok) {
+          throw new Error('Failed to fetch POM files')
+        }
+        const data = await response.json()
+        setPomFiles(data)
+      } catch (err) {
+        setError('Error fetching POM files. Please make sure the server is running.')
+        console.error('Error:', err)
+      }
+    }
+
+    fetchPOMFiles()
+  }, [])
+
+  const handleFileSelect = async (file: POMFile) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/pom-files/${encodeURIComponent(file.path)}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch file content')
+      }
+      const data = await response.json()
+      setSelectedFile({ ...file, content: data.content })
+    } catch (err) {
+      setError('Error fetching file content')
+      console.error('Error:', err)
     }
   }
 
@@ -202,6 +244,9 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* POM Visualizer Section */}
+        <PomVisualizer />
       </div>
 
       <footer className="text-center text-sm text-gray-500 p-4 mt-8">
