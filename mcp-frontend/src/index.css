@@ -3,24 +3,24 @@
 @tailwind utilities;
 
 /* Ensure html, body, and the React root div can take full height */
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* Apply base styles via Tailwind directives within the body layer if possible,
-   or ensure the @apply rule in the @layer base is the primary source */
 @layer base {
   body {
-    /* Apply base styles INCLUDING font */
     @apply bg-atenea-dark-bg text-atenea-dark-text font-sans;
-    /* Font smoothing */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Intento de override forzado */
     display: block !important;
-    place-items: initial !important; /* Resetea place-items */
+
+    place-items: initial !important;
+    /* Resetea place-items */
+
   }
 }
 
@@ -30,15 +30,15 @@ html, body, #root {
   .btn-primary {
     @apply bg-atenea-violet hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-200;
   }
-  
+
   .btn-secondary {
     @apply bg-atenea-cyan hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition duration-200;
   }
-  
+
   .input-field {
     @apply w-full px-3 py-2 border border-atenea-dark-border rounded-md shadow-sm bg-atenea-dark-card text-atenea-dark-text focus:outline-none focus:ring-2 focus:ring-atenea-violet focus:border-atenea-violet;
   }
-  
+
   .card {
     @apply bg-atenea-dark-card rounded-lg shadow-md p-6 border border-atenea-dark-border;
   }
@@ -64,6 +64,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -92,9 +93,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -105,9 +108,11 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }

@@ -7,7 +7,7 @@ import readline from 'readline'; // <--- Necessary for manual login fallback
 
 // Define the path to the storage state file directly here
 const storageStatePath = 'storageState.json';
-const outputDir = path.join('src', 'output'); // Output folder for POMs
+const outputDir = path.join('src', 'output'); // Base output folder for POMs
 
 // --- Helper Functions ---
 
@@ -165,9 +165,23 @@ export async function crawlAndGeneratePOMs(startUrl: string, browserInstance?: B
             try {
                 const result = await analyzePage(currentPageUrl, page);
                 const pageName = slugify(currentPageUrl);
-                const fileName = path.join(outputDir, `${pageName}.ts`);
-                generatePOM(result.elements, fileName, pageName);
-                visitedPages.add(currentPageUrl);
+                
+                // Create page-specific directory
+                const pageSpecificDir = path.join(outputDir, pageName);
+                const pomFilePath = path.join(pageSpecificDir, `${pageName}.ts`);
+
+                try {
+                    if (!fs.existsSync(pageSpecificDir)) {
+                        fs.mkdirSync(pageSpecificDir, { recursive: true });
+                        console.log(`\t📂 Created directory: ${pageSpecificDir}`);
+                    }
+
+                    // Generate POM
+                    generatePOM(result.elements, pomFilePath, pageName);
+                    visitedPages.add(currentPageUrl);
+                } catch (dirError) {
+                    console.error(`\t❌ Failed to create directory ${pageSpecificDir}:`, dirError);
+                }
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 console.warn(`⚠️ Failed to analyze the current page ${currentPageUrl}: ${msg}`);
@@ -225,18 +239,31 @@ export async function crawlAndGeneratePOMs(startUrl: string, browserInstance?: B
                 const result = await analyzePage(currentUrlAfterNav, page);
 
                 const pageName = slugify(currentUrlAfterNav);
-                const fileName = path.join(outputDir, `${pageName}.ts`);
-                generatePOM(result.elements, fileName, pageName);
-                visitedPages.add(currentUrlAfterNav); // Mark this URL as visited
+                const pageSpecificDir = path.join(outputDir, pageName);
+                const pomFilePath = path.join(pageSpecificDir, `${pageName}.ts`);
+
+                try {
+                    if (!fs.existsSync(pageSpecificDir)) {
+                        fs.mkdirSync(pageSpecificDir, { recursive: true });
+                        console.log(`\t📂 Created directory: ${pageSpecificDir}`);
+                    }
+
+                    // Generate POM
+                    generatePOM(result.elements, pomFilePath, pageName);
+                    visitedPages.add(currentUrlAfterNav);
+                } catch (dirError) {
+                    console.error(`\t❌ Failed to create directory ${pageSpecificDir}:`, dirError);
+                    continue; // Skip to next iteration if dir creation fails
+                }
 
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 console.warn(`\t⚠️ Failed to analyze ${fullUrl} (or its redirect ${page?.url()}): ${msg.split('\n')[0]}`);
-                 // Mark both URLs as visited to avoid retries
-                 visitedPages.add(fullUrl);
-                 if (page?.url() && page.url() !== fullUrl) {
+                // Mark both URLs as visited to avoid retries
+                visitedPages.add(fullUrl);
+                if (page?.url() && page.url() !== fullUrl) {
                     visitedPages.add(page.url().split('#')[0]);
-                 }
+                }
             }
         } // End of for loop
          // --- End of Crawling Logic ---
