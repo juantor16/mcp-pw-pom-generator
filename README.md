@@ -52,7 +52,13 @@ The easiest way to use the tool is through the Aegis QA Toolkit web interface.
    - Frontend GUI development server (port 5173)
 4. Open your web browser and navigate to `http://localhost:5173`
 5. Use the interface to enter a target URL and start analysis or crawling
-6. Generated POMs will appear in the `src/output` folder
+6. For each analyzed page, the tool will generate:
+   ```
+   src/output/
+   └── page-name/           # Directory for each analyzed page
+       ├── page-name.ts     # Page Object Model
+       └── page-name.png    # Full-page screenshot
+   ```
 
 ## Alternative Usage Methods
 
@@ -82,6 +88,25 @@ npm run start:backend
 POST http://localhost:3001/analyze
 POST http://localhost:3001/crawl
 ```
+
+## Output Structure
+
+For each analyzed page, the tool creates a dedicated directory under `src/output/` containing:
+
+```
+src/output/
+├── home/                 # Example: Homepage
+│   ├── home.ts          # POM with element selectors and methods
+│   └── home.png         # Full-page screenshot for reference
+├── login/               # Example: Login page
+│   ├── login.ts         # POM for login page
+│   └── login.png        # Screenshot of login page
+└── dashboard/           # Example: Dashboard
+    ├── dashboard.ts     # POM for dashboard
+    └── dashboard.png    # Screenshot of dashboard
+```
+
+This structure helps maintain organization and provides visual references alongside the generated POMs.
 
 ---
 

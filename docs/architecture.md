@@ -19,16 +19,15 @@ The MCP POM Generator is a sophisticated tool designed to analyze web applicatio
    - Maintains page hierarchy and relationships
 
 3. **Navigator (`src/navigator.ts`)**
-   - Handles page navigation and crawling
-   - Uses Analyzer to understand page structure
-   - Interacts with POM Generator to create models
-   - Manages browser context and state
+   - Core component managing Playwright interactions
+   - Handles page navigation and element discovery
+   - Manages screenshot capture and file organization
+   - Used by both CLI and Server components
 
-4. **Compare (`src/compare.ts`)**
-   - Compares different versions of POMs
-   - Uses Analyzer to detect changes
-   - Loads and analyzes existing POMs
-   - Generates comparison reports
+4. **Compare Tool (`src/compare.ts`)**
+   - Validates generated POMs against live pages
+   - Identifies broken or missing selectors
+   - Helps maintain POM quality
 
 5. **CLI (`src/cli.ts`)**
    - Command-line interface for direct tool usage
@@ -50,6 +49,22 @@ The MCP POM Generator is a sophisticated tool designed to analyze web applicatio
    - Interacts with the MCP Server API
    - Provides a visual way to trigger analysis/crawls and view results
    - Modern, responsive design with Tailwind CSS
+
+## Output Structure
+
+The tool organizes its output in a hierarchical structure:
+
+```
+src/output/
+├── page-name/           # Directory for each analyzed page
+│   ├── page-name.ts    # Generated POM file
+│   └── page-name.png   # Full-page screenshot
+└── ...                 # Additional page directories
+```
+
+Each analyzed page gets its own directory containing:
+- A TypeScript POM file (.ts) with element selectors and methods
+- A full-page screenshot (.png) for visual reference and documentation
 
 ## Component Interactions
 
@@ -88,10 +103,10 @@ graph TD
 ## Data Flow
 
 1. **CLI Flow**
-   User Command -> CLI -> Navigator -> Analyzer -> POM Generator -> File System
+   User Command -> CLI -> Navigator -> Analyzer -> POM Generator -> File System (POM + Screenshot)
 
 2. **Server API Flow**
-   HTTP Request -> MCP Server -> Navigator -> Analyzer -> POM Generator -> Response
+   HTTP Request -> MCP Server -> Navigator -> Analyzer -> POM Generator -> File System (POM + Screenshot) -> Response
 
 3. **Compare Flow**
    Compare Command -> Load POM -> Navigator -> Analyzer -> Validation Results
@@ -164,10 +179,10 @@ graph TD
    - CLI for automation/scripts
    - Server API for integration
 
-3. **Session Management**
-   - Separate authentication setup
-   - Reusable session state
-   - Secure credential handling
+3. **Output Organization**
+   - Page-specific directories for clarity
+   - Visual references alongside code
+   - Maintainable file structure
 
 4. **Code Generation**
    - TypeScript for type safety
