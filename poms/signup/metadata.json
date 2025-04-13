@@ -1,0 +1,28 @@
+[
+  {
+    "locatorName": "biosafeappLink",
+    "selector": "a",
+    "boundingBox": {
+      "x": 56,
+      "y": 16,
+      "width": 179.6875,
+      "height": 40
+    }
+  },
+  {
+    "locatorName": "registrarseLink",
+    "selector": ".register-button",
+    "boundingBox": {
+      "x": 1086.75,
+      "y": 19,
+      "width": 121.25,
+      "height": 34
+    }
+  },
+  {
+    "locatorName": "registrarseButton",
+    "selector": "getByTestId('botonRegistro')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByTestId(\" while parsing css selector \"getByTestId('botonRegistro')\". Did you mean to CSS.escape it?"
+  }
+]

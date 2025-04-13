@@ -1,0 +1,211 @@
+[
+  {
+    "locatorName": "elementButton",
+    "selector": "#button",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "elementButton1",
+    "selector": "getByLabel('Expandir')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Expandir')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "elementButton2",
+    "selector": "getByLabel('Atrás')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Atrás')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "elementButton3",
+    "selector": "getByLabel('Guía')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Guía')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "logoLink",
+    "selector": "#logo",
+    "boundingBox": {
+      "x": 56,
+      "y": 0,
+      "width": 129,
+      "height": 56
+    }
+  },
+  {
+    "locatorName": "omitirNavegacinButton",
+    "selector": "getByLabel('Omitir navegación')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Omitir navegación')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "buscarButton",
+    "selector": "getByLabel('Buscar')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Buscar')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "accederLink",
+    "selector": "getByLabel('Acceder')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Acceder')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "endpointLink",
+    "selector": "#endpoint",
+    "boundingBox": {
+      "x": 4,
+      "y": 60,
+      "width": 64,
+      "height": 74
+    }
+  },
+  {
+    "locatorName": "msButton",
+    "selector": ".truncated-text-wiz__inline-button",
+    "boundingBox": {
+      "x": 618.375,
+      "y": 166,
+      "width": 36.875,
+      "height": 16
+    }
+  },
+  {
+    "locatorName": "msButton1",
+    "selector": "getByLabel('Descripción. ¡Bienvenidos al canal de Atenea Conocimientos!… Presiona para ver más.')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Descripción. ¡Bienvenidos al canal de Atenea Conocimientos!… Presiona para ver más.')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "suscribirseButton",
+    "selector": "getByLabel('Suscribirse')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Suscribirse')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "roletpytpapericonbuttonButton",
+    "selector": "getByRole('button')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByRole(\" while parsing css selector \"getByRole('button')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "aLink",
+    "selector": ".yt-simple-endpoint",
+    "boundingBox": {
+      "x": 56,
+      "y": 0,
+      "width": 123,
+      "height": 56
+    }
+  },
+  {
+    "locatorName": "thumbnailLink",
+    "selector": "#thumbnail",
+    "boundingBox": {
+      "x": 141,
+      "y": 360,
+      "width": 210,
+      "height": 118
+    }
+  },
+  {
+    "locatorName": "playwrightLeerEmailsParte2CmoGenerarElTokenDeGmailApiLink",
+    "selector": "getByLabel('Playwright: Leer Emails (Parte 2: Cómo Generar el Token de Gmail API)')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Playwright: Leer Emails (Parte 2: Cómo Generar el Token de Gmail API)')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "playwrightLeerEmailsParte1SetupGoogleCloudYGmailApiLink",
+    "selector": "getByLabel('Playwright: Leer Emails (Parte 1: Setup Google Cloud y Gmail API)')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Playwright: Leer Emails (Parte 1: Setup Google Cloud y Gmail API)')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "nosTomamosUnRespiroYSeguimosAprendiendoLink",
+    "selector": "getByLabel('Nos tomamos un respiro y seguimos aprendiendo')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Nos tomamos un respiro y seguimos aprendiendo')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "mcpPomGeneratorAhoraEntraATodoLoginConPlaywrightGlobalSetupLink",
+    "selector": "getByLabel('¡MCP POM Generator Ahora Entra a TODO! 🚀 (Login con Playwright Global Setup)')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('¡MCP POM Generator Ahora Entra a TODO! 🚀 (Login con Playwright Global Setup)')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "adisHardcodingOptimizaTusTestsDePlaywrightConJsonYDatosDinmicosLink",
+    "selector": "getByLabel('¡Adiós Hardcoding! Optimiza tus Tests de Playwright con JSON y Datos Dinámicos')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('¡Adiós Hardcoding! Optimiza tus Tests de Playwright con JSON y Datos Dinámicos')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "playwrightDeTestsLargosACdigoEleganteLink",
+    "selector": "getByLabel('Playwright: De Tests Largos a Código Elegante')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Playwright: De Tests Largos a Código Elegante')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "aLink1",
+    "selector": ".shortsLockupViewModelHostEndpoint",
+    "boundingBox": {
+      "x": 141,
+      "y": 645,
+      "width": 210,
+      "height": 315
+    }
+  },
+  {
+    "locatorName": "informacinshoppingButton",
+    "selector": "getByLabel('Mostrar tarjetas')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Mostrar tarjetas')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "activarSonidoButton",
+    "selector": ".ytp-unmute",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "cancelarButton",
+    "selector": ".ytp-button",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "verMsTardeButton",
+    "selector": "getByLabel('Ver más tarde')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Ver más tarde')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "compartirButton",
+    "selector": "getByLabel('Compartir')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Compartir')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "copiarVnculoButton",
+    "selector": "getByLabel('Copiar vínculo')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Copiar vínculo')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "enVivoButton",
+    "selector": ".ytp-live-badge",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "buttonButton",
+    "selector": ".ytp-chapter-title",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "buttonButton1",
+    "selector": ".ytp-fullerscreen-edu-button",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "mediacontainerlinkLink",
+    "selector": "#media-container-link",
+    "boundingBox": null
+  }
+]

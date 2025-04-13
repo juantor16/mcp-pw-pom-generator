@@ -1,0 +1,153 @@
+[
+  {
+    "locatorName": "userAgreementLink",
+    "selector": "a",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "aLink",
+    "selector": ".skip-link",
+    "boundingBox": {
+      "x": 16,
+      "y": -720,
+      "width": 203.640625,
+      "height": 48
+    }
+  },
+  {
+    "locatorName": "aLink1",
+    "selector": ".nav__logo-link",
+    "boundingBox": {
+      "x": 76,
+      "y": 12,
+      "width": 102,
+      "height": 52
+    }
+  },
+  {
+    "locatorName": "editProfilePhotoButton",
+    "selector": "getByLabel('Edit profile photo')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Edit profile photo')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "buttonButton",
+    "selector": ".profile-card__not-you",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "buttonButton1",
+    "selector": ".profile-card__edit-photo-text",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "cancelButton",
+    "selector": "getByLabel('Cancel')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Cancel')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "userAgreementLink1",
+    "selector": ".join-form__form-body-agreement-item-link",
+    "boundingBox": {
+      "x": 464,
+      "y": 359,
+      "width": 109.78125,
+      "height": 17
+    }
+  },
+  {
+    "locatorName": "joinformsubmitButton",
+    "selector": "#join-form-submit",
+    "boundingBox": {
+      "x": 464,
+      "y": 389.984375,
+      "width": 352,
+      "height": 56
+    }
+  },
+  {
+    "locatorName": "signInButton",
+    "selector": ".authwall-join-form__form-toggle--bottom",
+    "boundingBox": {
+      "x": 691.59375,
+      "y": 565.984375,
+      "width": 50.84375,
+      "height": 26
+    }
+  },
+  {
+    "locatorName": "elementButton",
+    "selector": ".modal__outlet",
+    "boundingBox": {
+      "x": 432,
+      "y": 640.984375,
+      "width": 2,
+      "height": 2
+    }
+  },
+  {
+    "locatorName": "dismissButton",
+    "selector": "getByLabel('Dismiss')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Dismiss')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "showButton",
+    "selector": "getByLabel('Show your LinkedIn password')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Show your LinkedIn password')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "forgotPasswordLink",
+    "selector": ".font-sans",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "signInButton1",
+    "selector": ".btn-md",
+    "boundingBox": {
+      "x": 16,
+      "y": -720,
+      "width": 203.640625,
+      "height": 48
+    }
+  },
+  {
+    "locatorName": "roledivButton",
+    "selector": "getByRole('button')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByRole(\" while parsing css selector \"getByRole('button')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "joinNowButton",
+    "selector": ".authwall-sign-in-form__form-toggle--bottom",
+    "boundingBox": null
+  },
+  {
+    "locatorName": "aLink2",
+    "selector": ".li-footer__item-link",
+    "boundingBox": {
+      "x": 207.578125,
+      "y": 678,
+      "width": 35.65625,
+      "height": 18
+    }
+  },
+  {
+    "locatorName": "rolebuttonButton",
+    "selector": "getByRole('menuitem')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByRole(\" while parsing css selector \"getByRole('menuitem')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "buttonButton2",
+    "selector": ".language-selector__button",
+    "boundingBox": {
+      "x": 1112.734375,
+      "y": 678,
+      "width": 79.890625,
+      "height": 17
+    }
+  }
+]
