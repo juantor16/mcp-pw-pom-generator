@@ -1,4 +1,3 @@
-
 # 🧠 MCP POM Generator
 
 Welcome to **MCP POM Generator**, an experimental and powerful tool to scan websites, auto-generate optimized **Page Object Model (POM)** files for **Playwright**, and visually highlight which elements are correctly mapped, missing, or broken. 🔍💥
@@ -33,86 +32,60 @@ npm install
 
 ---
 
-## ⚙️ Usage
+## 🚀 Usage with Aegis GUI (Recommended)
 
-### 1. Generate POM for a Single Page (no login required)
+The easiest way to use the tool is through the Aegis QA Toolkit web interface.
 
-```bash
-# Analyze a public page and generate POM in src/output/
-npx ts-node src/cli.ts -u https://your-site.com/public-page
+**Prerequisites:**
+* Node.js and npm installed
+* Run `npm install` in the root directory to install all dependencies (backend and frontend)
+* If analyzing authenticated sites, complete the one-time authentication setup described in `docs/authentication.md` (which generates `storageState.json`)
 
-# Optional: specify output file and highlight mapped elements
-npx ts-node src/cli.ts -u https://your-site.com -o myPage.ts --highlight
-```
+**Running the Application:**
+1. Open your terminal in the project's root directory
+2. Run the combined start command:
+   ```bash
+   npm run start:dev
+   ```
+3. This will launch both:
+   - Backend API server (port 3001)
+   - Frontend GUI development server (port 5173)
+4. Open your web browser and navigate to `http://localhost:5173`
+5. Use the interface to enter a target URL and start analysis or crawling
+6. Generated POMs will appear in the `src/output` folder
 
----
+## Alternative Usage Methods
 
-### 2. Multiple Page Crawl (Public or Authenticated Sites)
+While the GUI is recommended for most users, the tool can also be used through other interfaces:
 
-#### a. (If login is required) Configure Playwright Global Setup
+### CLI Usage
 
-Create `playwright.config.ts`:
-
-```ts
-import { defineConfig } from '@playwright/test';
-
-const STORAGE_STATE = 'storageState.json';
-
-export default defineConfig({
-  globalSetup: require.resolve('./src/global.setup.ts'),
-  projects: [
-    {
-      name: 'mcp-crawler-setup',
-      testMatch: /global\.setup\.ts/,
-    },
-    {
-      name: 'mcp-crawler-main',
-      use: {
-        storageState: STORAGE_STATE,
-      },
-    },
-  ],
-});
-```
-
-Create `src/global.setup.ts` with your login logic using Playwright. Make sure to save the session using:
-
-```ts
-await page.context().storageState({ path: 'storageState.json' });
-```
-
-> **Tip**: Use `process.env` for secure credentials.
-
-Add `storageState.json` to your `.gitignore`.
-
-Run the setup script:
+For automation scripts or command-line preference:
 
 ```bash
-npx playwright test --project=mcp-crawler-setup
+# Analyze a single page
+npx ts-node src/cli.ts analyze <url>
+
+# Crawl and analyze multiple pages
+npx ts-node src/cli.ts crawl <url>
 ```
 
-#### b. Start the MCP Server
+### Server API Usage
+
+The server API (started automatically with `npm run start:dev`) can be used directly:
 
 ```bash
-npx ts-node src/mcpServer.ts
-```
+# Start only the backend server
+npm run start:backend
 
-Server will listen at `http://localhost:3001`.
-
-#### c. Send the Crawl Request
-
-```json
+# Then make API calls to:
+POST http://localhost:3001/analyze
 POST http://localhost:3001/crawl
-{
-  "url": "https://your-site.com"
-}
 ```
-
-This will generate POMs for all navigated pages in `src/output/`.
 
 ---
 
-### 3. Compare a POM with the Live Page:
+### 2. Compare a POM with the Live Page:
 
 Use `compare.ts` to visually validate a generated POM against the live page. It shows which locators match, which are broken, and which elements might be missing from the POM.
 
@@ -155,7 +128,7 @@ npx ts-node src/compare.ts --url=https://your-site.com/dashboard --pom=src/outpu
 
 ## 🧠 Why MCP?
 
-> _"Because a POM is useless if you don’t know if it works."_
+> _"Because a POM is useless if you don't know if it works."_
 
 ---
 
