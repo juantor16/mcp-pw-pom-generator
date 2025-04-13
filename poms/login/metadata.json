@@ -1,0 +1,40 @@
+[
+  {
+    "locatorName": "biosafeappLink",
+    "selector": "a",
+    "boundingBox": {
+      "x": 56,
+      "y": 16,
+      "width": 179.6875,
+      "height": 40
+    }
+  },
+  {
+    "locatorName": "registrarseLink",
+    "selector": ".register-button",
+    "boundingBox": {
+      "x": 1086.75,
+      "y": 19,
+      "width": 121.25,
+      "height": 34
+    }
+  },
+  {
+    "locatorName": "iniciarSesinButton",
+    "selector": "getByTestId('login-button')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByTestId(\" while parsing css selector \"getByTestId('login-button')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "recupralaAquLink",
+    "selector": "getByTestId('forgot-password-link')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByTestId(\" while parsing css selector \"getByTestId('forgot-password-link')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "regstrateAquLink",
+    "selector": "getByTestId('signup-link')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByTestId(\" while parsing css selector \"getByTestId('signup-link')\". Did you mean to CSS.escape it?"
+  }
+]

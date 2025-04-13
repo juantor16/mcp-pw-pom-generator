@@ -1,0 +1,42 @@
+[
+  {
+    "locatorName": "biosafeappLink",
+    "selector": "a",
+    "boundingBox": {
+      "x": 56,
+      "y": 16,
+      "width": 139.6875,
+      "height": 40
+    }
+  },
+  {
+    "locatorName": "registrarseLink",
+    "selector": ".register-button",
+    "boundingBox": {
+      "x": 1086.75,
+      "y": 19,
+      "width": 121.25,
+      "height": 34
+    }
+  },
+  {
+    "locatorName": "prubaloGratisLink",
+    "selector": ".cta-button",
+    "boundingBox": {
+      "x": 56,
+      "y": 291,
+      "width": 209.75,
+      "height": 47
+    }
+  },
+  {
+    "locatorName": "suscribirmeButton",
+    "selector": ".subscribe-button",
+    "boundingBox": {
+      "x": 77,
+      "y": 2371.328125,
+      "width": 515,
+      "height": 52.796875
+    }
+  }
+]

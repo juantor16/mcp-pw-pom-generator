@@ -1,0 +1,32 @@
+[
+  {
+    "locatorName": "biosafeappLink",
+    "selector": "a",
+    "boundingBox": {
+      "x": 56,
+      "y": 16,
+      "width": 179.6875,
+      "height": 40
+    }
+  },
+  {
+    "locatorName": "registrarseLink",
+    "selector": ".register-button",
+    "boundingBox": {
+      "x": 1086.75,
+      "y": 19,
+      "width": 121.25,
+      "height": 34
+    }
+  },
+  {
+    "locatorName": "contctanosLink",
+    "selector": ".about-us-a",
+    "boundingBox": {
+      "x": 557.65625,
+      "y": 1663.15625,
+      "width": 164.671875,
+      "height": 54.390625
+    }
+  }
+]

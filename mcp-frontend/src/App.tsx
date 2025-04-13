@@ -14,6 +14,7 @@ interface CrawlResult {
   success: boolean;
   message: string;
   pagesAnalyzed: string[];
+  generatedPoms: string[];
 }
 
 interface POMFile {
@@ -25,69 +26,59 @@ interface POMFile {
 function App() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState('Ready')
-  const [results, setResults] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [crawlResults, setCrawlResults] = useState<CrawlResult | null>(null)
-  const [isCrawling, setIsCrawling] = useState(false)
+  const [results, setResults] = useState<AnalysisResult | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [pomFiles, setPomFiles] = useState<POMFile[]>([])
   const [selectedFile, setSelectedFile] = useState<POMFile | null>(null)
+  const [shouldRefreshPoms, setShouldRefreshPoms] = useState(false)
 
-  const handleAnalyzeSinglePage = async () => {
-    // Reset previous results and errors
-    setResults(null)
+  const handleCrawl = async () => {
+    setIsLoading(true)
     setError(null)
-    setCrawlResults(null)
-    setStatus('Analyzing page...')
-
     try {
-      const response = await axios.post<AnalysisResult>('http://localhost:3001/analyze', {
-        url: url
-      })
-
-      setStatus('Analysis complete!')
-      setResults(response.data)
+      const response = await axios.post<CrawlResult>('http://localhost:3001/crawl', { url })
+      setCrawlResults(response.data)
+      setShouldRefreshPoms(true)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
-      setStatus('Error during analysis')
-      setError(errorMessage)
-      console.error('Analysis error:', err)
+      const msg = err instanceof Error ? err.message : 'Failed to crawl URL'
+      setError(msg)
+      console.error('Error crawling URL:', err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleStartCrawl = async () => {
-    // Reset previous results and errors
-    setResults(null)
+  const handleAnalyze = async () => {
+    setIsLoading(true)
     setError(null)
-    setCrawlResults(null)
-    setStatus('Starting crawl...')
-    setIsCrawling(true)
-
     try {
-      const response = await axios.post<CrawlResult>('http://localhost:3001/crawl', {
-        url: url
-      })
-
-      setStatus('Crawl finished!')
-      setCrawlResults(response.data)
+      const response = await axios.post<AnalysisResult>('http://localhost:3001/analyze', { url })
+      setResults(response.data)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
-      setStatus('Error during crawl')
-      setError(errorMessage)
-      console.error('Crawl error:', err)
+      const msg = err instanceof Error ? err.message : 'Failed to analyze URL'
+      setError(msg)
+      console.error('Error analyzing URL:', err)
     } finally {
-      setIsCrawling(false)
+      setIsLoading(false)
     }
   }
 
   useEffect(() => {
     const fetchPOMFiles = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/pom-files')
+        const response = await fetch('http://localhost:3001/api/poms')
         if (!response.ok) {
           throw new Error('Failed to fetch POM files')
         }
         const data = await response.json()
-        setPomFiles(data)
+        const transformedData = data.map((pom: any) => ({
+          name: pom.pageName,
+          path: pom.pomPath,
+          content: ''  // Content will be loaded on selection
+        }))
+        setPomFiles(transformedData)
       } catch (err) {
         setError('Error fetching POM files. Please make sure the server is running.')
         console.error('Error:', err)
@@ -95,11 +86,11 @@ function App() {
     }
 
     fetchPOMFiles()
-  }, [])
+  }, [shouldRefreshPoms])
 
   const handleFileSelect = async (file: POMFile) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/pom-files/${encodeURIComponent(file.path)}`)
+      const response = await fetch(`http://localhost:3001/api/pom-content?path=${encodeURIComponent(file.path)}`)
       if (!response.ok) {
         throw new Error('Failed to fetch file content')
       }
@@ -109,6 +100,10 @@ function App() {
       setError('Error fetching file content')
       console.error('Error:', err)
     }
+  }
+
+  const handleCrawlComplete = () => {
+    setShouldRefreshPoms(false)
   }
 
   return (
@@ -146,19 +141,19 @@ function App() {
 
           <div className="flex flex-col sm:flex-row gap-4 mt-6">
             <button 
-              onClick={handleAnalyzeSinglePage}
+              onClick={handleAnalyze}
               className="flex-1 bg-atenea-violet hover:bg-atenea-violet/80 text-white font-bold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-atenea-violet/20 text-lg"
-              disabled={!url}
+              disabled={isLoading || !url}
             >
               Analyze Single Page
             </button>
             
             <button 
-              onClick={handleStartCrawl}
+              onClick={handleCrawl}
               className="flex-1 bg-atenea-cyan hover:bg-atenea-cyan/80 text-gray-900 font-bold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-atenea-cyan/20 text-lg"
-              disabled={!url || isCrawling}
+              disabled={isLoading || !url}
             >
-              {isCrawling ? 'Crawling...' : 'Start Crawl & Generate POMs'}
+              {isLoading ? 'Crawling...' : 'Start Crawl & Generate POMs'}
             </button>
           </div>
         </div>
@@ -186,28 +181,7 @@ function App() {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold text-white mb-4">Results</h2>
           <div className="space-y-4">
-            {results ? (
-              <div className="space-y-3 text-lg">
-                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
-                  <span className="text-gray-300">Status:</span>
-                  <span className={results.success ? 'text-atenea-green font-medium' : 'text-red-400 font-medium'}>
-                    {results.success ? 'Success' : 'Failed'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
-                  <span className="text-gray-300">Message:</span>
-                  <span className="text-white">{results.message}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
-                  <span className="text-gray-300">Page Name:</span>
-                  <span className="text-white">{results.pageName}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
-                  <span className="text-gray-300">Elements Found:</span>
-                  <span className="text-atenea-cyan font-medium">{results.elementsCount}</span>
-                </div>
-              </div>
-            ) : crawlResults ? (
+            {crawlResults ? (
               <div className="space-y-6">
                 <div className="space-y-3 text-lg">
                   <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
@@ -222,13 +196,21 @@ function App() {
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
                     <span className="text-gray-300">Pages Analyzed:</span>
-                    <span className="text-atenea-cyan font-medium">{crawlResults.pagesAnalyzed.length}</span>
+                    <span className="text-atenea-cyan font-medium">
+                      {crawlResults.pagesAnalyzed?.length ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                    <span className="text-gray-300">POMs Generated:</span>
+                    <span className="text-atenea-cyan font-medium">
+                      {crawlResults.generatedPoms?.length ?? 0}
+                    </span>
                   </div>
                 </div>
                 <div>
                   <h3 className="text-xl font-medium text-white mb-3">Pages List</h3>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                    {crawlResults.pagesAnalyzed.map((page, index) => (
+                    {crawlResults.pagesAnalyzed?.map((page, index) => (
                       <div 
                         key={index} 
                         className="p-3 bg-gray-900/50 rounded-lg text-base text-gray-300 hover:bg-gray-900 transition-colors"
@@ -236,6 +218,9 @@ function App() {
                         {page}
                       </div>
                     ))}
+                    {(!crawlResults.pagesAnalyzed || crawlResults.pagesAnalyzed.length === 0) && (
+                      <p className="text-gray-400">No pages analyzed yet.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -246,7 +231,7 @@ function App() {
         </div>
 
         {/* POM Visualizer Section */}
-        <PomVisualizer />
+        <PomVisualizer onCrawlComplete={handleCrawlComplete} />
       </div>
 
       <footer className="text-center text-sm text-gray-500 p-4 mt-8">

@@ -1,4 +1,5 @@
 import { chromium, Page, Browser, BrowserContext } from 'playwright';
+import { ElementData } from './types';
 
 // Define type for the elements found
 type AnalyzedElement = {
@@ -7,41 +8,49 @@ type AnalyzedElement = {
     selector: string;
 };
 
+export type AnalysisResult = {
+    success: boolean;
+    message: string;
+    elements: ElementData[];
+};
+
 // The function signature now accepts an optional page
-export async function analyzePage(url: string, existingPage?: Page, highlight: boolean = false): Promise<{ url: string, elements: AnalyzedElement[] }> {
+export async function analyzePage(url: string, existingPage?: Page, highlight: boolean = false): Promise<AnalysisResult> {
     let pageToAnalyze: Page;
-    let browser: Browser | null = null; // To handle closing if we create a new one
-    let context: BrowserContext | null = null; // To handle closing if we create a new one
+    let browser: Browser | null = null;
+    let context: BrowserContext | null = null;
     let shouldCloseBrowser = false;
 
     if (existingPage) {
         pageToAnalyze = existingPage;
-        // Ensure we are on the correct URL (the crawler should have already navigated)
-        // Compare URLs ignoring the fragment (#)
         if (pageToAnalyze.url().split('#')[0] !== url.split('#')[0]) {
-             console.log(`(analyzer) Navigating to ${url} on existing page...`);
-             try {
-                 // Use a more robust waitUntil like 'networkidle' or 'load' if 'domcontentloaded' is not sufficient
-                 await pageToAnalyze.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-             } catch (navError) {
-                  console.warn(`(analyzer) Error navigating to ${url}: ${navError instanceof Error ? navError.message : navError}`);
-                  // Return empty or throw an error as preferred
-                  return { url: pageToAnalyze.url(), elements: [] };
-             }
+            console.log(`(analyzer) Navigating to ${url} on existing page...`);
+            try {
+                await pageToAnalyze.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+            } catch (navError) {
+                console.warn(`(analyzer) Error navigating to ${url}: ${navError instanceof Error ? navError.message : navError}`);
+                return {
+                    success: false,
+                    message: 'Page navigation error',
+                    elements: []
+                };
+            }
         }
     } else {
-        // If no page is passed, create one temporarily (for individual use)
-        console.log(`(analyzer) Creating temporary browser and page for ${url}...`);
-        browser = await chromium.launch({ headless: !highlight }); // Use headless if highlight is not requested
+        browser = await chromium.launch({ headless: !highlight });
         context = await browser.newContext();
         pageToAnalyze = await context.newPage();
         try {
-             await pageToAnalyze.goto(url, { waitUntil: 'networkidle', timeout: 30000 }); // Use 'networkidle' or 'load'
-             shouldCloseBrowser = true; // Mark for closing at the end
+            await pageToAnalyze.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+            shouldCloseBrowser = true;
         } catch (navError) {
-             console.error(`(analyzer) Fatal error navigating to ${url}: ${navError}`);
-             if (browser) await browser.close(); // Clean up
-             throw navError; // Re-throw the error
+            console.error(`(analyzer) Fatal error navigating to ${url}: ${navError}`);
+            if (browser) await browser.close();
+            return {
+                success: false,
+                message: 'Page navigation error',
+                elements: []
+            };
         }
     }
 
@@ -64,131 +73,47 @@ export async function analyzePage(url: string, existingPage?: Page, highlight: b
     // *** END GENERIC WAIT ***
 
     // Extract elements using page.evaluate
-    const elements: AnalyzedElement[] = await pageToAnalyze.evaluate(() => {
-        const results: AnalyzedElement[] = [];
-
-        // --- Function getBestSelector ---
-        function getBestSelector(el: HTMLElement): string {
-            // Prioritize data-testid
-            if (el.getAttribute('data-testid')) return `[data-testid="${el.getAttribute('data-testid')}"]`;
-
-            const role = el.getAttribute('role');
-            const tagName = el.tagName.toLowerCase();
-            const type = el.getAttribute('type')?.toLowerCase();
-            // Escape quotes and limit text length
-            const textContent = el.textContent?.trim()
-                .replace(/\\/g, '\\\\') // Escape backslashes first
-                .replace(/'/g, "\\'")  // Escape single quotes
-                .replace(/"/g, '\\"')  // Escape double quotes
-                .substring(0, 100); // Limit length
-            const ariaLabel = el.getAttribute('aria-label')?.trim()
-                .replace(/\\/g, '\\\\')
-                .replace(/'/g, "\\'")
-                .replace(/"/g, '\\"')
-                .substring(0, 100);
-
-            // Buttons and links by role/text (with limited and escaped text)
-             if ((tagName === 'button' || role === 'button' || (tagName === 'input' && (type === 'button' || type === 'submit' || type === 'reset'))) && textContent) {
-                 // Using a regex for name if it contains escaped quotes might be more robust
-                 // but for now, we keep the simple escaped version
-                 return `getByRole('${role || 'button'}', { name: '${textContent}' })`;
-             }
-              if (tagName === 'a' && textContent) {
-                 return `getByRole('link', { name: '${textContent}' })`;
-             }
-
-             // Inputs by label (with limited and escaped text)
-            if (el.id) {
-                const label = document.querySelector(`label[for="${el.id}"]`);
-                if (label && label.textContent?.trim()) {
-                     const labelText = label.textContent.trim()
-                         .replace(/\\/g, '\\\\')
-                         .replace(/'/g, "\\'")
-                         .replace(/"/g, '\\"')
-                         .substring(0, 100);
-                     return `getByLabel('${labelText}')`;
-                }
+    const elements: ElementData[] = await pageToAnalyze.evaluate(() => {
+        const results: ElementData[] = [];
+        const interactiveElements = document.querySelectorAll('button, input, select, textarea, a, [role="button"], [role="link"]');
+        
+        for (const element of interactiveElements) {
+            const tag = element.tagName.toLowerCase();
+            const text = element.textContent?.trim() || '';
+            
+            // Generate selector based on available attributes
+            let selector = '';
+            const testId = element.getAttribute('data-testid');
+            const role = element.getAttribute('role');
+            const label = element.getAttribute('aria-label');
+            const placeholder = element.getAttribute('placeholder');
+            
+            if (testId) {
+                selector = `getByTestId('${testId}')`;
+            } else if (role) {
+                selector = `getByRole('${role}')`;
+            } else if (label) {
+                selector = `getByLabel('${label}')`;
+            } else if (placeholder) {
+                selector = `getByPlaceholder('${placeholder}')`;
+            } else {
+                selector = element.id ? `#${element.id}` : element.className ? `.${element.className.split(' ')[0]}` : tag;
             }
-
-            // Inputs by placeholder (with limited and escaped text)
-            if (el.getAttribute('placeholder')) {
-                 const placeholderText = el.getAttribute('placeholder')!.trim()
-                     .replace(/\\/g, '\\\\')
-                     .replace(/'/g, "\\'")
-                     .replace(/"/g, '\\"')
-                     .substring(0, 100);
-                 return `getByPlaceholder('${placeholderText}')`;
-             }
-
-            // By aria-label (with limited and escaped text)
-             if (ariaLabel) {
-                 // getByLabel searches by label text OR aria-label
-                 return `getByLabel('${ariaLabel}')`;
-             }
-
-             // Generic text match (less specific, with limited and escaped text)
-              if (textContent && (tagName === 'p' || tagName === 'span' || tagName === 'div' || tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4' || tagName === 'h5' || tagName === 'h6')) {
-                  // Avoid very long or generic texts if possible
-                 if (textContent.length > 2 && textContent.length < 80 && !textContent.match(/^\d+$/)) { // Avoid only numbers or very short/long texts
-                      return `getByText('${textContent}')`;
-                  }
-             }
-
-            // Fallback to CSS selectors (less robust)
-            if (el.id) return `#${el.id.replace(/[^a-zA-Z0-9_-]/g, '\\$&')}`; // Escape special characters in ID
-            if (el.getAttribute('name')) return `${tagName}[name="${el.getAttribute('name')!.replace(/"/g, '\\"')}"]`; // Escape quotes in name
-
-            return ''; // No useful selector found
-        }
-        // --- End getBestSelector ---
-
-        const seenSelectors = new Set<string>();
-        // Broader selector to capture more interactive elements and key text
-        // Add generic [role] to capture more elements with defined roles
-        document.querySelectorAll('button, a, input, textarea, select, [role], [data-testid]').forEach((el) => {
-            const element = el as HTMLElement;
-
-             // Ignore hidden elements or those inside <head>, <script>, <style>
-             // Also ignore if it has no visible size
-             if (!element.offsetParent || element.closest('head, script, style') || element.offsetWidth === 0 || element.offsetHeight === 0) {
-                 return;
-             }
-
-            const selector = getBestSelector(element);
-
-             // Validate that the selector is not empty and has not been seen before
-            if (!selector || seenSelectors.has(selector)) return;
-
-            // Simplify validation: Accept any `getBy*` selector or basic CSS we prioritize
-            const isValidSelectorFormat =
-                 selector.startsWith('getBy') ||   // Accept all getBy*
-                 selector.startsWith('[data-testid=') ||
-                 selector.startsWith('#') ||
-                 selector.match(/^[a-z]+\[name=/); // Allow tag[name=...]
-
-            if (!isValidSelectorFormat) {
-                 // console.log(`Invalid or non-prioritized selector discarded: ${selector}`);
-                return; // Skip less specific CSS selectors if they don't match
-            }
-
-            seenSelectors.add(selector);
-
+            
             results.push({
-                tag: element.tagName.toLowerCase(),
-                 // Use textContent or aria-label as descriptive text
-                text: element.textContent?.trim() || element.getAttribute('aria-label')?.trim() || '',
-                selector: selector
+                tag,
+                text,
+                selector
             });
-        });
+        }
 
         return results;
-    }); // End of page.evaluate
-
+    });
 
     // Highlight logic (unchanged)
     if (highlight && elements.length > 0) {
         console.log(`(analyzer) Highlighting ${elements.length} elements found...`);
-        await pageToAnalyze.evaluate((elementsToHighlight: AnalyzedElement[]) => {
+        await pageToAnalyze.evaluate((elementsToHighlight: ElementData[]) => {
             elementsToHighlight.forEach(({ selector }) => {
                 try {
                     let foundElement: Element | null = null;
@@ -222,5 +147,9 @@ export async function analyzePage(url: string, existingPage?: Page, highlight: b
 
     // Return the final real URL and the elements
     console.log(`(analyzer) Analysis completed for ${pageToAnalyze.url()}. Elements found: ${elements.length}`);
-    return { url: pageToAnalyze.url(), elements };
+    return {
+        success: true,
+        message: `Found ${elements.length} interactive elements`,
+        elements
+    };
 }

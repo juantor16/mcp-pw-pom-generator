@@ -7,7 +7,11 @@ interface PomInfo {
     screenshotPath: string | null;
 }
 
-function PomVisualizer() {
+interface PomVisualizerProps {
+    onCrawlComplete?: () => void;
+}
+
+function PomVisualizer({ onCrawlComplete }: PomVisualizerProps) {
     const [availablePoms, setAvailablePoms] = useState<PomInfo[]>([]);
     const [selectedPom, setSelectedPom] = useState<PomInfo | null>(null);
     const [pomCode, setPomCode] = useState<string>('');
@@ -15,27 +19,33 @@ function PomVisualizer() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    // Effect to fetch available POMs on mount
-    useEffect(() => {
-        const fetchPoms = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const response = await axios.get<PomInfo[]>('http://localhost:3001/api/poms');
-                setAvailablePoms(response.data);
-                setHasAttemptedFetch(true);
-            } catch (err) {
-                const msg = err instanceof Error ? err.message : 'Failed to load POM list';
-                setError(msg);
-                console.error('Error fetching POM list:', err);
-                setHasAttemptedFetch(true);
-            } finally {
-                setIsLoading(false);
+    const fetchPoms = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get<PomInfo[]>('http://localhost:3001/api/poms');
+            console.log('Fetched POMs:', response.data); // Debug log
+            setAvailablePoms(response.data);
+            setHasAttemptedFetch(true);
+            if (onCrawlComplete) {
+                onCrawlComplete();
             }
-        };
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to load POM list';
+            setError(msg);
+            console.error('Error fetching POM list:', err);
+            setHasAttemptedFetch(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Effect to fetch available POMs on mount and when refreshTrigger changes
+    useEffect(() => {
         fetchPoms();
-    }, []);
+    }, [refreshTrigger]); // Run on mount and when refreshTrigger changes
 
     // Effect to fetch code/screenshot when selectedPom changes
     useEffect(() => {
@@ -64,8 +74,10 @@ function PomVisualizer() {
 
             // Set Screenshot URL
             if (selectedPom.screenshotPath) {
-                // Use the full URL to the server's static files
-                const url = `http://localhost:3001/generated-output/${selectedPom.pageName}/${selectedPom.pageName}.png`;
+                // Use the correct path for the screenshot
+                const screenshotPath = selectedPom.screenshotPath.replace('src/output/', '');
+                const url = `http://localhost:3001/generated-output/${screenshotPath}`;
+                console.log('Setting screenshot URL:', url); // Debug log
                 setScreenshotUrl(url);
             } else {
                 setScreenshotUrl('');
@@ -76,6 +88,22 @@ function PomVisualizer() {
 
         fetchDetails();
     }, [selectedPom]);
+
+    // Function to trigger a refresh
+    const refreshPomList = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
+
+    // Add a refresh button
+    const RefreshButton = () => (
+        <button
+            onClick={refreshPomList}
+            className="ml-2 px-3 py-1 text-sm bg-atenea-violet hover:bg-atenea-violet/80 text-white rounded-lg transition duration-200"
+            disabled={isLoading}
+        >
+            {isLoading ? 'Refreshing...' : 'Refresh List'}
+        </button>
+    );
 
     const handlePomSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedPath = event.target.value;
@@ -88,7 +116,10 @@ function PomVisualizer() {
 
     return (
         <div className="my-8 p-6 bg-atenea-dark-card rounded-lg shadow-xl border border-atenea-dark-border">
-            <h2 className="text-2xl font-semibold text-white mb-4">POM Visualizer</h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold text-white">POM Visualizer</h2>
+                <RefreshButton />
+            </div>
 
             {/* POM Selector Dropdown */}
             <div className="mb-6">

@@ -1,0 +1,62 @@
+[
+  {
+    "locatorName": "instagramLink",
+    "selector": "getByRole('link')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByRole(\" while parsing css selector \"getByRole('link')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "followButton",
+    "selector": ".",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"\" while parsing css selector \".\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "messageButton",
+    "selector": "getByRole('button')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByRole(\" while parsing css selector \"getByRole('button')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "postsLink",
+    "selector": "getByRole('tab')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByRole(\" while parsing css selector \"getByRole('tab')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "buttonButton",
+    "selector": ".x1lugfcp",
+    "boundingBox": {
+      "x": 467.8125,
+      "y": 2135.875,
+      "width": 344.359375,
+      "height": 36
+    }
+  },
+  {
+    "locatorName": "metaLink",
+    "selector": ".x1fhwpqd",
+    "boundingBox": {
+      "x": 216.5,
+      "y": 418,
+      "width": 85,
+      "height": 16
+    }
+  },
+  {
+    "locatorName": "switchDisplayLanguageSelect",
+    "selector": "getByLabel('Switch Display Language')",
+    "boundingBox": null,
+    "error": "page.$: Unexpected token \"getByLabel(\" while parsing css selector \"getByLabel('Switch Display Language')\". Did you mean to CSS.escape it?"
+  },
+  {
+    "locatorName": "termsOfUseLink",
+    "selector": "a",
+    "boundingBox": {
+      "x": 172.5,
+      "y": 11.5,
+      "width": 103,
+      "height": 37
+    }
+  }
+]

@@ -1,9 +1,11 @@
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
-import { analyzePage } from './analyzer';       // Import your analyzer
-import { generatePOM } from './pomGenerator';   // Import your POM generator
+import { chromium, Browser, BrowserContext, Page, ElementHandle } from 'playwright';
+import { analyzePage, AnalysisResult } from './analyzer';
+import { generatePOM } from './pomGenerator';
+import { BoundingBox, ElementData, LocatorMetadata, ElementScreenshotData, PomGenerationResult } from './types';
 import path from 'path';
 import fs from 'fs';
 import readline from 'readline'; // <--- Necessary for manual login fallback
+import { toCamelCase, toClassName } from './utils';  // Import utility functions
 
 // Define the path to the storage state file directly here
 const storageStatePath = 'storageState.json';
@@ -24,16 +26,24 @@ function waitForEnter(query: string): Promise<void> {
 }
 
 // Function to convert URLs/text into valid file/class names
-function slugify(text: string): string {
-    const urlPath = text.startsWith('http') ? new URL(text).pathname : text;
-    if (!urlPath || urlPath === '/') return 'home';
-    return urlPath
-        .toLowerCase()
-        .replace(/^\/|\/$/g, '') // Remove slashes at the beginning/end
-        .replace(/[^a-z0-9\/]+/g, '-') // Replace non-alphanumeric characters (except /) with -
-        .replace(/\//g, '--') // Replace / with -- (to indicate hierarchy in the name)
-        .replace(/^-+|-+$/g, '') // Remove dashes at the beginning/end
-        || 'page'; // Fallback if empty
+function slugify(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        // Remove protocol and common subdomains
+        let hostname = urlObj.hostname.replace(/^(www\.|m\.)/, '');
+        // Create path string, removing query parameters and hash
+        let path = urlObj.pathname.replace(/^\/|\/$/g, '');
+        // Replace special characters and spaces
+        let slug = `${hostname}-${path}`
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        // Ensure the slug isn't too long for filesystems
+        return slug.slice(0, 200) || 'home';
+    } catch {
+        // Fallback for invalid URLs
+        return 'invalid-url';
+    }
 }
 
 // Function to detect if a URL seems to be a login page (for manual fallback)
@@ -46,241 +56,247 @@ function isLoginPage(url: string): boolean {
         return lowerUrl.includes('/login') || lowerUrl.includes('/signin') || lowerUrl.includes('/auth');
     }
 }
+
+async function getClickableElements(page: Page): Promise<ElementHandle[]> {
+    // Get all clickable elements (buttons, links, etc.)
+    const elements = await page.$$([
+        'button',
+        'a',
+        'input[type="button"]',
+        'input[type="submit"]',
+        '[role="button"]',
+        '[onclick]',
+        '[class*="btn"]',
+        '[class*="button"]'
+    ].join(','));
+
+    return elements;
+}
+
+async function getLocatorMetadata(page: Page, selector: string): Promise<LocatorMetadata> {
+    const locator = page.locator(selector).first();
+    const boundingBox = await locator.boundingBox();
+    if (!boundingBox) {
+        throw new Error(`Could not get bounding box for selector: ${selector}`);
+    }
+    return {
+        name: selector,
+        selector,
+        boundingBox
+    };
+}
+
+function capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 // --- End of Helper Functions ---
 
+export interface CrawlResult {
+    success: boolean;
+    message: string;
+    pagesAnalyzed: string[];
+    generatedPoms: string[];
+}
 
 // --- Main Crawling Function (with Manual Fallback) ---
-export async function crawlAndGeneratePOMs(startUrl: string, browserInstance?: Browser) {
-    let browser: Browser | null = browserInstance || null;
-    let context: BrowserContext | null = null;
-    let page: Page | null = null;
-    const visitedPages = new Set<string>();
-    let ownBrowser = false;
+export async function crawlAndGeneratePOMs(
+    browser: Browser,
+    startUrl: string,
+    outputDir: string,
+    maxPages: number = 10
+): Promise<CrawlResult> {  // Changed return type to CrawlResult
+    console.log(`[Navigator] Starting crawl from ${startUrl} with max pages: ${maxPages}`);
+    const visitedUrls = new Set<string>();
+    const urlsToVisit = [startUrl];
+    const startUrlObj = new URL(startUrl);
+    const baseDomain = startUrlObj.hostname;
+    const generatedPoms = new Set<string>();
 
-    try {
-        console.log('🚀 Starting MCP POM Generator Crawl...');
-        if (!browser) {
-            console.log('   Creating a new browser instance...');
-            // Launch visible in case manual login is needed
-            browser = await chromium.launch({ headless: false });
-            ownBrowser = true;
-        } else {
-            console.log('   Reusing existing browser instance...');
+    // Ensure output directory exists
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+        console.log(`[Navigator] Created output directory: ${outputDir}`);
+    }
+
+    const page = await browser.newPage();
+    let pagesVisited = 0;
+    let totalElements = 0;
+
+    while (urlsToVisit.length > 0 && pagesVisited < maxPages) {
+        const currentUrl = urlsToVisit.shift()!;
+        if (visitedUrls.has(currentUrl)) {
+            console.log(`[Navigator] Skipping already visited URL: ${currentUrl}`);
+            continue;
         }
 
-        // *** Session Logic: Try to load or fallback to manual ***
         try {
-            // 1. Try to load session (preferred, assumes globalSetup)
-            console.log(`   Attempting to load session from ${storageStatePath}...`);
-            context = await browser.newContext({ storageState: storageStatePath });
-            console.log(`✅ Session loaded from ${storageStatePath}.`);
-            // Create page and navigate to startUrl WITH session
-            page = await context.newPage();
-            console.log(`   Navigating to the initial URL: ${startUrl} (with loaded session)`);
-            await page.goto(startUrl, { waitUntil: 'networkidle', timeout: 60000 });
+            console.log(`[Navigator] Attempting to visit ${currentUrl} (${pagesVisited + 1}/${maxPages})`);
+            await page.goto(currentUrl, { waitUntil: 'networkidle' });
+            const currentUrlAfterNav = page.url().split('#')[0]; // Get the final URL after any redirects
+            visitedUrls.add(currentUrlAfterNav);
+            pagesVisited++;
+            console.log(`[Navigator] Successfully navigated to ${currentUrlAfterNav}`);
+
+            const pageName = slugify(currentUrlAfterNav);
+            const pageDir = path.join(outputDir, 'pages', pageName);
+            fs.mkdirSync(pageDir, { recursive: true });
+            console.log(`[Navigator] Created page directory: ${pageDir}`);
+
+            // Take screenshot
+            const screenshotPath = path.join(pageDir, `${pageName}.png`);
+            await page.screenshot({ path: screenshotPath, fullPage: true });
+            console.log(`[Navigator] Saved screenshot to: ${screenshotPath}`);
+
+            // Get all clickable elements
+            console.log(`[Navigator] Starting clickable elements search...`);
+            const elements = await getClickableElements(page);
+            console.log(`[Navigator] Found ${elements.length} clickable elements`);
+
+            console.log(`[Navigator] Processing element metadata...`);
+            const elementData = await Promise.all(elements.map(async (element) => {
+                try {
+                    const metadata = await getLocatorMetadata(page, await element.evaluate(el => (el as HTMLElement).tagName.toLowerCase()));
+                    const text = await element.evaluate(el => (el as HTMLElement).textContent?.trim() || '');
+                    return {
+                        tag: metadata.name,
+                        text,
+                        selector: metadata.selector,
+                        metadata: {
+                            screenshotPath: `pages/${pageName}/${pageName}.png`,
+                            metadataPath: `pages/${pageName}/${pageName}.json`,
+                            boundingBox: metadata.boundingBox
+                        }
+                    };
+                } catch (err) {
+                    console.warn(`[Navigator] Failed to process element:`, err);
+                    return null;
+                }
+            }));
+            const validElementData = elementData.filter(data => data !== null) as ElementData[];
+            totalElements += validElementData.length;
+            console.log(`[Navigator] Successfully processed ${validElementData.length} elements with metadata`);
+
+            // Save metadata
+            const metadataPath = path.join(pageDir, `${pageName}.json`);
+            fs.writeFileSync(metadataPath, JSON.stringify(
+                validElementData.map(el => el.metadata), 
+                null, 
+                2
+            ));
+            console.log(`[Navigator] Saved element metadata to: ${metadataPath}`);
+
+            // Generate POM
+            console.log(`[Navigator] Generating POM for ${pageName}...`);
+            const pomResult = generatePOM(
+                validElementData.map(({ tag, text, selector }) => ({ tag, text, selector })),
+                pageName
+            );
+            const pomPath = path.join(pageDir, `${pageName}.ts`);
+            fs.writeFileSync(pomPath, pomResult.pomString);
+            console.log(`[Navigator] Generated POM file at: ${pomPath}`);
+            generatedPoms.add(pageName);
+
+            // Get new URLs to visit
+            console.log(`[Navigator] Collecting links from page...`);
+            const links = await page.$$eval('a', (anchors) => 
+                anchors.map(a => a.href).filter(href => href && !href.includes('#'))
+            );
+            console.log(`[Navigator] Found ${links.length} total links`);
+
+            // Filter and add new URLs
+            let newUrlsAdded = 0;
+            for (const link of links) {
+                try {
+                    const linkUrl = new URL(link);
+                    if (linkUrl.hostname === baseDomain && !visitedUrls.has(link)) {
+                        urlsToVisit.push(link);
+                        newUrlsAdded++;
+                    }
+                } catch {
+                    console.warn(`[Navigator] Invalid URL found: ${link}`);
+                }
+            }
+            console.log(`[Navigator] Added ${newUrlsAdded} new URLs to visit queue. Queue size: ${urlsToVisit.length}`);
+
+            // Small delay to prevent overwhelming the server
+            await page.waitForTimeout(1000);
 
         } catch (error) {
-            // 2. If loading fails -> Activate Manual Fallback
-            console.warn(`⚠️ Failed to load session from ${storageStatePath}. Starting manual flow if necessary... (${error instanceof Error ? error.message.split('\n')[0] : error})`); // Show only the first line of the error
-            // Create EMPTY context first
-            context = await browser.newContext();
-            page = await context.newPage();
-            // Go to startUrl WITHOUT session to look for links
-            console.log(`   Navigating to the initial URL: ${startUrl} (without session)`);
-            await page.goto(startUrl, { waitUntil: 'networkidle', timeout: 60000 });
-            const initialUrl = page.url();
-            console.log(`   Current page (without session): ${initialUrl}`);
-
-            // Look for login links on the initial page
-            console.log("   🔎 Searching for login links on the initial page...");
-            const baseUrl = new URL(initialUrl).origin;
-            const initialHrefs = await page.$$eval(
-                'a[href]',
-                 (anchors, base) => {
-                     const uniqueHrefs = new Set<string>();
-                     anchors.forEach(a => {
-                         const href = a.getAttribute('href');
-                         if (href && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
-                             try {
-                                 const absoluteUrl = new URL(href, base).toString().split('#')[0];
-                                 if (absoluteUrl.startsWith(base) && !href.startsWith('javascript:')) {
-                                     uniqueHrefs.add(absoluteUrl);
-                                 }
-                             } catch (e) { }
-                         }
-                     });
-                     return Array.from(uniqueHrefs);
-                 },
-                 baseUrl
-             );
-            const loginUrlToVisit = initialHrefs.find(href => isLoginPage(href)) || null;
-
-            if (loginUrlToVisit) {
-                // **Manual Login Flow** (If a login link is found)
-                console.warn(`   ⚠️ Detected login link (${loginUrlToVisit}). Starting manual login flow...`);
-                console.log(`   🚗 Navigating to the detected login page: ${loginUrlToVisit}`);
-                await page.goto(loginUrlToVisit, { waitUntil: 'networkidle', timeout: 60000 });
-                console.log('\n   --- MANUAL LOGIN REQUIRED ---');
-                console.log('   🧑‍💻 Please log in manually in the browser window.');
-                await waitForEnter('   👉 Press ENTER here in the console once you have logged in...');
-
-                // Save session NOW after manual login
-                console.log('   💾 Saving session state...');
-                await context.storageState({ path: storageStatePath });
-                console.log(`   ✅ Session state saved to ${storageStatePath}`);
-
-                // Reload context WITH session
-                console.log('   🔄 Restarting context with the saved session...');
-                await context.close(); // Close the context without session
-                context = await browser.newContext({ storageState: storageStatePath }); // Open a new one WITH session
-                page = await context.newPage(); // Create the page WITHIN the new context
-
-                // Return to startUrl, NOW with session
-                console.log(`   🔄 Returning to ${startUrl} with active session...`);
-                await page.goto(startUrl, { waitUntil: 'networkidle', timeout: 60000 });
-                console.log(`   ✅ Landed on: ${page.url()} (after manual login)`);
-            } else {
-                // If no login link is found, continue without session
-                console.log("   ℹ️ No login links found on the initial page. Continuing without session.");
-                // We are already at startUrl with the empty context and the page created
-            }
+            console.error(`[Navigator] Error processing ${currentUrl}:`, error);
         }
-        // *** End of Session and Login Logic ***
+    }
 
-        // From here, 'page' and 'context' are defined, with or without session
-        console.log(`\n✅ Context ready. Current page: ${page.url()}`);
+    console.log(`[Navigator] Crawl complete. Visited ${pagesVisited} pages.`);
+    console.log(`[Navigator] Generated ${generatedPoms.size} POMs.`);
+    console.log(`[Navigator] Total elements processed: ${totalElements}`);
+    console.log(`[Navigator] Final list of visited URLs:`, Array.from(visitedUrls));
+    await page.close();
+    
+    // Return the detailed result
+    return {
+        success: true,
+        message: `Crawl completed. Generated ${generatedPoms.size} POMs with ${totalElements} elements across ${pagesVisited} pages.`,
+        pagesAnalyzed: Array.from(visitedUrls),
+        generatedPoms: Array.from(generatedPoms)
+    };
+}
 
-        // Ensure the output folder exists
+export async function navigateAndCollectElements(
+    page: Page,
+    url: string,
+    outputDir: string,
+    pageName: string
+): Promise<void> {
+    try {
+        // Analyze the page and collect elements
+        const analysisResult: AnalysisResult = await analyzePage(url, page);
+        
+        if (!analysisResult.success || analysisResult.elements.length === 0) {
+            console.error('Failed to analyze page or no elements found:', analysisResult.message);
+            return;
+        }
+
+        // Generate POM from the analyzed elements
+        const pomResult = generatePOM(
+            analysisResult.elements.map(el => ({
+                tag: el.tag,
+                text: el.text || '',
+                selector: el.selector
+            })),
+            pageName
+        );
+
+        // Ensure output directory exists
         if (!fs.existsSync(outputDir)) {
-            console.log(`📂 Creating output directory: ${outputDir}`);
             fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        // --- Crawling Logic (Core) ---
+        // Write POM file
+        const pomFilePath = path.join(outputDir, `${pageName}.ts`);
+        fs.writeFileSync(pomFilePath, pomResult.pomString, 'utf8');
 
-        // Analyze the current page where we started (with or without session)
-        const currentPageUrl = page.url().split('#')[0];
-        if (!visitedPages.has(currentPageUrl)) {
-            console.log(`\n🔎 Analyzing current page: ${currentPageUrl}`);
-            try {
-                const result = await analyzePage(currentPageUrl, page);
-                const pageName = slugify(currentPageUrl);
-                
-                // Create page-specific directory
-                const pageSpecificDir = path.join(outputDir, pageName);
-                const pomFilePath = path.join(pageSpecificDir, `${pageName}.ts`);
+        // Write locator mappings to JSON
+        const mappingsFilePath = path.join(outputDir, `${pageName}-locators.json`);
+        fs.writeFileSync(
+            mappingsFilePath,
+            JSON.stringify(pomResult.locatorMappings, null, 2),
+            'utf8'
+        );
 
-                try {
-                    if (!fs.existsSync(pageSpecificDir)) {
-                        fs.mkdirSync(pageSpecificDir, { recursive: true });
-                        console.log(`\t📂 Created directory: ${pageSpecificDir}`);
-                    }
-
-                    // Generate POM
-                    generatePOM(result.elements, pomFilePath, pageName);
-                    visitedPages.add(currentPageUrl);
-                } catch (dirError) {
-                    console.error(`\t❌ Failed to create directory ${pageSpecificDir}:`, dirError);
-                }
-            } catch (err) {
-                const msg = err instanceof Error ? err.message : String(err);
-                console.warn(`⚠️ Failed to analyze the current page ${currentPageUrl}: ${msg}`);
-            }
-        }
-
-        // Extract links to follow
-        console.log('\n🔗 Extracting internal links from the current page...');
-        const currentBaseUrl = new URL(page.url()).origin;
-        let linksToCrawl: string[] = [];
-        try {
-             linksToCrawl = await page.$$eval(
-                'a[href]',
-                 (anchors, base) => {
-                     const uniqueHrefs = new Set<string>();
-                     anchors.forEach(a => {
-                         const href = a.getAttribute('href');
-                         if (href && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
-                             try {
-                                 const absoluteUrl = new URL(href, base).toString().split('#')[0];
-                                 if (absoluteUrl.startsWith(base) && !href.startsWith('javascript:')) {
-                                     uniqueHrefs.add(absoluteUrl);
-                                 }
-                             } catch (e) { }
-                         }
-                     });
-                     return Array.from(uniqueHrefs);
-                 },
-                 currentBaseUrl
-             );
-             console.log(`🔍 Found ${linksToCrawl.length} unique links from the same domain to crawl.`);
-        } catch(evalError) {
-            console.error("Error extracting links:", evalError);
-        }
-
-        // Sort links (simple alphabetical order)
-        linksToCrawl.sort((a, b) => a.localeCompare(b));
-
-        // Traverse and analyze the found links
-        console.log('\n🔄 Starting analysis of linked pages...');
-        for (const fullUrl of linksToCrawl) {
-            if (visitedPages.has(fullUrl)) { continue; } // Skip already visited
-
-            console.log(`\n\t➡ Visiting link: ${fullUrl}`);
-            try {
-                await page.goto(fullUrl, { waitUntil: 'networkidle', timeout: 60000 });
-                const currentUrlAfterNav = page.url().split('#')[0];
-
-                if (visitedPages.has(currentUrlAfterNav)) { // Check again in case of redirect
-                    console.log(`\t⏭️ Skipping ${currentUrlAfterNav} (already visited post-redirect)`);
-                    continue;
-                }
-
-                console.log(`\t🔎 Analyzing: ${currentUrlAfterNav}`);
-                const result = await analyzePage(currentUrlAfterNav, page);
-
-                const pageName = slugify(currentUrlAfterNav);
-                const pageSpecificDir = path.join(outputDir, pageName);
-                const pomFilePath = path.join(pageSpecificDir, `${pageName}.ts`);
-
-                try {
-                    if (!fs.existsSync(pageSpecificDir)) {
-                        fs.mkdirSync(pageSpecificDir, { recursive: true });
-                        console.log(`\t📂 Created directory: ${pageSpecificDir}`);
-                    }
-
-                    // Generate POM
-                    generatePOM(result.elements, pomFilePath, pageName);
-                    visitedPages.add(currentUrlAfterNav);
-                } catch (dirError) {
-                    console.error(`\t❌ Failed to create directory ${pageSpecificDir}:`, dirError);
-                    continue; // Skip to next iteration if dir creation fails
-                }
-
-            } catch (err) {
-                const msg = err instanceof Error ? err.message : String(err);
-                console.warn(`\t⚠️ Failed to analyze ${fullUrl} (or its redirect ${page?.url()}): ${msg.split('\n')[0]}`);
-                // Mark both URLs as visited to avoid retries
-                visitedPages.add(fullUrl);
-                if (page?.url() && page.url() !== fullUrl) {
-                    visitedPages.add(page.url().split('#')[0]);
-                }
-            }
-        } // End of for loop
-         // --- End of Crawling Logic ---
-
+        console.log(`Generated POM file at: ${pomFilePath}`);
+        console.log(`Generated locator mappings at: ${mappingsFilePath}`);
     } catch (error) {
-        console.error('\n❌ Fatal error during the crawling process:', error);
-    } finally {
-        // Ensure the browser is closed if this script created it
-        if (browser && ownBrowser) {
-            console.log('\n🚪 Closing the browser created by the script...');
-            await browser.close();
-        } else if (browser && !ownBrowser) {
-             console.log('\n🚪 Not closing the browser (reused instance).');
-        }
-        console.log('\n🏁 Crawling process completed.');
-        console.log(`✨ Pages analyzed and POMs generated (or attempted): ${visitedPages.size}`);
+        console.error('Error in navigateAndCollectElements:', error);
+        throw error;
     }
+}
 
-    return Array.from(visitedPages);
-} // End of crawlAndGeneratePOMs
+async function generatePOMForPage(page: Page, elements: ElementData[]): Promise<PomGenerationResult> {
+    const pageName = await page.title();
+    return generatePOM(elements, pageName);
+}
+
+async function savePOMFile(result: PomGenerationResult, outputPath: string): Promise<void> {
+    await fs.promises.writeFile(outputPath, result.pomString, 'utf-8');
+}
