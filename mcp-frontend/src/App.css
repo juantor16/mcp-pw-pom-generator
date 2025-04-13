@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-atenea-dark-bg text-atenea-dark-text;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-atenea-violet hover:bg-atenea-violet/80 text-white font-bold py-2 px-4 rounded transition duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-atenea-cyan hover:bg-atenea-cyan/80 text-gray-900 font-bold py-2 px-4 rounded transition duration-200;
+  }
+
+  .input-field {
+    @apply w-full p-3 rounded-lg bg-gray-900 border-2 border-gray-700 focus:border-atenea-violet focus:ring-2 focus:ring-atenea-violet/50 text-white placeholder-gray-400;
+  }
+
+  .card {
+    @apply bg-atenea-dark-card rounded-lg shadow-xl border border-atenea-dark-border p-6;
+  }
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-700 rounded-full hover:bg-gray-600;
+}
+
+/* Code block styles */
+pre {
+  @apply font-mono text-sm;
+}
+
+/* Animation for loading states */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+} 
