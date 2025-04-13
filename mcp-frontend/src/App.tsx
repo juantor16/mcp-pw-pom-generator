@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import axios from 'axios'
-import './App.css'
 
 interface AnalysisResult {
   success: boolean;
@@ -71,91 +70,151 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      <h1>MCP POM Generator GUI</h1>
-      
-      <div className="input-section">
-        <input
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter target URL"
-          className="url-input"
-        />
-      </div>
+    <div className="min-h-screen bg-atenea-dark-bg text-atenea-dark-text font-sans flex flex-col items-center justify-center p-4 sm:p-8">
+      <div className="w-full max-w-4xl space-y-6 bg-atenea-dark-card rounded-lg shadow-xl p-6 sm:p-8">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row justify-center items-center text-center sm:text-left mb-6">
+          <img
+            src="/atenea-logo.png"
+            alt="Atenea Conocimientos Logo"
+            className="h-12 w-auto mb-3 sm:mb-0 sm:mr-4"
+          />
+        </div>
+        <div className="flex flex-col sm:flex-row justify-center items-center text-center sm:text-left mb-6">
+          <h1 className="text-3xl font-bold text-atenea-violet">
+            Aegis QA Toolkit
+          </h1>
+        </div>
 
-      <div className="button-section">
-        <button 
-          onClick={handleAnalyzeSinglePage}
-          className="action-button"
-          disabled={!url}
-        >
-          Analyze Single Page
-        </button>
-        
-        <button 
-          onClick={handleStartCrawl}
-          className="action-button"
-          disabled={!url || isCrawling}
-        >
-          {isCrawling ? 'Crawling...' : 'Start Crawl & Generate POMs'}
-        </button>
-      </div>
+        {/* Input Section */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="url" className="block text-lg font-medium text-white">
+              Target URL
+            </label>
+            <input
+              id="url"
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter target URL"
+              className="w-full p-3 rounded-lg bg-gray-900 border-2 border-gray-700 focus:border-atenea-violet focus:ring-2 focus:ring-atenea-violet/50 text-white placeholder-gray-400 text-lg"
+            />
+          </div>
 
-      <div className="status-section">
-        <h2>Status</h2>
-        <pre className={`status-message ${error ? 'error' : ''}`}>
-          {status}
-          {error && (
-            <div className="error-message">
-              Error: {error}
-            </div>
-          )}
-        </pre>
-      </div>
+          <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <button 
+              onClick={handleAnalyzeSinglePage}
+              className="flex-1 bg-atenea-violet hover:bg-atenea-violet/80 text-white font-bold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-atenea-violet/20 text-lg"
+              disabled={!url}
+            >
+              Analyze Single Page
+            </button>
+            
+            <button 
+              onClick={handleStartCrawl}
+              className="flex-1 bg-atenea-cyan hover:bg-atenea-cyan/80 text-gray-900 font-bold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-atenea-cyan/20 text-lg"
+              disabled={!url || isCrawling}
+            >
+              {isCrawling ? 'Crawling...' : 'Start Crawl & Generate POMs'}
+            </button>
+          </div>
+        </div>
 
-      <div className="results-section">
-        <h2>Results</h2>
-        <pre className="results-content">
-          {results ? (
-            <>
-              <div className="result-item">
-                <strong>Status:</strong> {results.success ? 'Success' : 'Failed'}
+        {/* Status Section */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-white mb-4">Status</h2>
+          <div className={`p-4 rounded-lg font-mono text-base overflow-auto whitespace-pre-wrap min-h-[100px] border ${
+            error 
+              ? 'bg-red-900/30 text-red-200 border-red-800' 
+              : 'bg-gray-900/50 text-gray-200 border-gray-700'
+          }`}>
+            <p className="font-medium">
+              {status}
+              {error && (
+                <div className="mt-2 text-red-300 font-normal">
+                  Error: {error}
+                </div>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Results Section */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-white mb-4">Results</h2>
+          <div className="space-y-4">
+            {results ? (
+              <div className="space-y-3 text-lg">
+                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                  <span className="text-gray-300">Status:</span>
+                  <span className={results.success ? 'text-atenea-green font-medium' : 'text-red-400 font-medium'}>
+                    {results.success ? 'Success' : 'Failed'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                  <span className="text-gray-300">Message:</span>
+                  <span className="text-white">{results.message}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                  <span className="text-gray-300">Page Name:</span>
+                  <span className="text-white">{results.pageName}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                  <span className="text-gray-300">Elements Found:</span>
+                  <span className="text-atenea-cyan font-medium">{results.elementsCount}</span>
+                </div>
               </div>
-              <div className="result-item">
-                <strong>Message:</strong> {results.message}
-              </div>
-              <div className="result-item">
-                <strong>Page Name:</strong> {results.pageName}
-              </div>
-              <div className="result-item">
-                <strong>Elements Found:</strong> {results.elementsCount}
-              </div>
-            </>
-          ) : crawlResults ? (
-            <>
-              <div className="result-item">
-                <strong>Status:</strong> {crawlResults.success ? 'Success' : 'Failed'}
-              </div>
-              <div className="result-item">
-                <strong>Message:</strong> {crawlResults.message}
-              </div>
-              <div className="result-item">
-                <strong>Pages Analyzed:</strong> {crawlResults.pagesAnalyzed.length}
-              </div>
-              <div className="pages-list">
-                {crawlResults.pagesAnalyzed.map((page, index) => (
-                  <div key={index} className="page-item">
-                    {page}
+            ) : crawlResults ? (
+              <div className="space-y-6">
+                <div className="space-y-3 text-lg">
+                  <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                    <span className="text-gray-300">Status:</span>
+                    <span className={crawlResults.success ? 'text-atenea-green font-medium' : 'text-red-400 font-medium'}>
+                      {crawlResults.success ? 'Success' : 'Failed'}
+                    </span>
                   </div>
-                ))}
+                  <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                    <span className="text-gray-300">Message:</span>
+                    <span className="text-white">{crawlResults.message}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-900/50 rounded-lg">
+                    <span className="text-gray-300">Pages Analyzed:</span>
+                    <span className="text-atenea-cyan font-medium">{crawlResults.pagesAnalyzed.length}</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-medium text-white mb-3">Pages List</h3>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                    {crawlResults.pagesAnalyzed.map((page, index) => (
+                      <div 
+                        key={index} 
+                        className="p-3 bg-gray-900/50 rounded-lg text-base text-gray-300 hover:bg-gray-900 transition-colors"
+                      >
+                        {page}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </>
-          ) : (
-            'No results yet'
-          )}
-        </pre>
+            ) : (
+              <p className="text-gray-400 text-lg">No results yet</p>
+            )}
+          </div>
+        </div>
       </div>
+
+      <footer className="text-center text-sm text-gray-500 p-4 mt-8">
+        Powered by{' '}
+        <a
+          href="https://www.linkedin.com/in/juan-qa/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-atenea-cyan hover:underline"
+        >
+          Atenea Conocimientos
+        </a>
+      </footer>
     </div>
   )
 }
